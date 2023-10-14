@@ -1,0 +1,21 @@
+---
+- hosts: test
+  become: True
+
+  tasks:
+   - name: Export variable
+     shell: export debian_frontend=noninteractive
+
+   - name: Remove old freeipa-client
+     shell: apt-get -y autoremove freeipa-client --purge
+
+   - name:
+     apt:
+       update_cache: yes
+
+   - name: Install freeipa-client
+     apt:
+      pkg:
+      - freeipa-client
+   - name:
+     shell: ipa-client-install --mkhomedir -U -w xxxxxx -p enrollment.vm.test --domain=minatalent.com --force-join -N
