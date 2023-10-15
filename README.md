@@ -17,7 +17,7 @@ Update the inventory file in the inventory directory to specify the hosts on whi
 
 Run the selected playbook using the ansible-playbook command. For example:
 ```
-ansible-playbook -i inventory/my_hosts playbook_name.yml
+ansible-playbook -i all-hosts playbooks/playbook_name.yml
 ```
 Ansible will execute the playbook, applying the defined tasks to the specified hosts.
 
