@@ -1,0 +1,25 @@
+---
+- name: add new user
+  hosts: new
+  become: True
+  tasks:
+
+    - name: Create New User
+
+      user:
+
+        name: patrick
+
+        comment: "Patrick"
+
+        password: xxxxx
+
+        state: present
+
+    - name: add to sudoer
+
+      lineinfile:
+
+        path: /etc/sudoers.d/admins
+
+        line: "kasperian ALL=(ALL) NOPASSWD:ALL"

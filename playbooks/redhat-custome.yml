@@ -1,0 +1,203 @@
+---
+- name: Setup and Config OL7U8 v1
+  hosts: new
+  become: True
+  tasks:
+    - name: Disable SELinux
+      selinux:
+        state: disabled
+
+    - name: Disable and Stop firewalld
+      systemd:
+        name: firewalld
+        enabled: no
+        state: stopped
+
+    - name: Disable and Stop NetworkManager
+      systemd:
+        name: NetworkManager
+        enabled: no
+        state: stopped
+
+    - name: Disable IPv6
+      lineinfile:
+        path: /etc/sysctl.conf
+        line: "net.ipv6.conf.all.disable_ipv6 = 1"
+
+    - name: Disable Ctr+Alt+Del
+      shell: ln -s /dev/null /etc/systemd/system/ctrl-alt-del.target
+    - systemd:
+        daemon_reload: yes
+
+    - name: Add ColorShell Enviroment
+      lineinfile:
+        path: /etc/profile
+        line: export PS1='\[\033[1;33m\]\u\[\033[0m\]@\[\033[1;31m\]\h\[\033[0m\]:$PWD\[\033[0m\] > '
+
+    - name: Add HistoryTime Enviroment
+      lineinfile:
+        path: /etc/profile
+        line: export HISTTIMEFORMAT='%F %T  '
+
+    - name: Compress all System Repository
+      shell: 'gzip /etc/yum.repos.d/*'
+
+    - name: Create Login Users
+      user:
+        name: user1
+        comment: "sirname"
+        password: XXXXXXXXXXXX
+        state: present
+
+    - user:
+        name: user2
+        comment: "sirname"
+        password: xxxxxxxxxx
+        state: present
+
+    - name: Make Users Admins
+      blockinfile:
+        path: /etc/sudoers.d/admins
+        create: yes
+        block: |
+          user1 ALL=(ALL) NOPASSWD:ALL
+          user2 ALL=(ALL) NOPASSWD:ALL
+
+    - name: Disable RHGB
+      replace:
+        path: /etc/default/grub
+        regexp: "rhgb quiet"
+        replace: " "
+
+    - name: Grub Update
+      command: grub2-mkconfig -o /boot/grub2/grub.cfg
+
+    - name: Add Local Repository
+      yum_repository:
+        name: localrepo
+        description: Local YUM repo
+        file: local
+        baseurl: http://x.x.x.x/repo/ol7u8
+        enabled: yes
+        gpgcheck: no
+
+    - name: Install Zabbix Agent
+      yum:
+        name: http://x.x.x.x/package/zabbix-agent2-5.0.12-1.el7.x86_64.rpm
+
+    - name: Add Zabbix Server IP
+      lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regexp: '^Server='
+        line: 'Server=zabbix-server'
+
+    - name: Disable Zabbix ServerActive
+      lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regexp: '^ServerActive='
+        line: '#'
+
+    - name: Add Zabbix Agent Hostname
+      lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+        regexp: '^Hostname='
+        line: 'Hostname=system.hostname'
+
+    - name: Enable and Start ZabbixAgent Service
+      systemd:
+        name: zabbix-agent2
+        enabled: yes
+        state: started
+
+    - name: Change LogLevel to Notice
+      lineinfile:
+        path: /etc/systemd/system.conf
+        regexp: "#LogLevel=info"
+        line: "LogLevel=notice"
+
+    - name: Restart daemon-reexec
+      systemd:
+        daemon-reexec: yes
+
+    - name: Install Default Packages
+      yum:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - perl
+          - telnet
+          - open-vm-tools
+          - chrony
+          - net-tools
+          - openssh-clients
+          - lsscsi
+          - sysfsutils
+          - pciutils
+          - iotop
+          - sysstat
+          - lsof
+          - sg3_utils
+          - redhat-lsb-core
+          - xorg-x11-xauth.x86_64
+          - bash-completion
+
+    - name: Add DNS TimeServer
+      lineinfile:
+        path: /etc/hosts
+        line: "10.0.200.254 timeserver"
+
+    - name: Add DNS TimeServer
+      lineinfile:
+        path: /etc/hosts
+        line: "10.0.200.101 zabbix-server"
+
+    - name: Add local DNS to hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ansible_host}}  {{ansible_hostname}}.hooshmandrisk.ir  {{ansible_hostname}}"
+
+    - name: Add DNS timeserver in Chrony Config File
+      lineinfile:
+        path: /etc/chrony.conf
+        regexp: "server 0.rhel.pool.ntp.org iburst"
+        line: "server timeserver"
+
+    - lineinfile:
+        path: /etc/chrony.conf
+        regexp: "server 1.rhel.pool.ntp.org iburst"
+        line: "  "
+
+    - lineinfile:
+        path: /etc/chrony.conf
+        regexp: "server 2.rhel.pool.ntp.org iburst"
+        line: "  "
+
+    - lineinfile:
+        path: /etc/chrony.conf
+        regexp: "server 3.rhel.pool.ntp.org iburst"
+        line: "  "
+
+    - name: Start Chronyd Service
+      systemd:
+        name: chronyd
+        state: restarted
+        enabled: yes
+
+    - name: Disable DNS on sshd
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "#UseDNS yes"
+        line: "UseDNS no"
+
+    - name: Disable PermitRootLogin on sshd
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "#PermitRootLogin yes"
+        line: "PermitRootLogin no"
+
+    - name: restart sshd Service
+      systemd:
+        name: sshd
+        state: restarted
+
+

@@ -1,0 +1,38 @@
+---
+- name: mysql monitoring with zabbix agent2
+  hosts: mysql
+  become: True
+  tasks:
+
+    - name: change and set mysql connection
+      lineinfile:
+
+        path: /etc/zabbix/zabbix_agent2.conf
+
+        regexp: '^# Plugins.Mysql.Sessions.*.Uri='
+
+        line: 'Plugins.Mysql.Sessions.MYSQL.Uri=tcp://localhost:3306'
+
+
+    - lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+
+        regexp: '^# Plugins.Mysql.Sessions.*.User='
+
+        line: 'Plugins.Mysql.Sessions.MYSQL.User=monitoring'
+
+
+    - lineinfile:
+        path: /etc/zabbix/zabbix_agent2.conf
+
+        regexp: '^# Plugins.Mysql.Sessions.*.Password='
+
+        line: 'Plugins.Mysql.Sessions.MYSQL.Password=FN9sHvwzQB3dqRtD9PF6'
+
+
+    - name: Restart ZabbixAgent Service
+      systemd:
+
+        name: zabbix-agent2
+
+        state: restarted

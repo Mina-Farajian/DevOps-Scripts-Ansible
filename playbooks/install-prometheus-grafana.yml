@@ -1,0 +1,33 @@
+---
+- name: Install and Configure Prometheus and Grafana
+  hosts: your_vm_group
+  become: yes
+  tasks:
+    - name: Install Prometheus
+      yum:
+        name: prometheus
+        state: present
+
+    - name: Install Grafana
+      yum:
+        name: grafana
+        state: present
+
+    - name: Start and Enable Prometheus service
+      systemd:
+        name: prometheus
+        enabled: yes
+        state: started
+
+    - name: Start and Enable Grafana service
+      systemd:
+        name: grafana-server
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: Reload Systemd
+      systemd:
+        daemon_reload: yes
+        state: reloaded
+

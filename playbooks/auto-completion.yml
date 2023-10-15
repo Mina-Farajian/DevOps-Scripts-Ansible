@@ -1,0 +1,19 @@
+---
+- name: install docker auto tab completion
+  hosts: docker
+  become: true
+  tasks:
+
+    - name: copy tab completion script
+
+      copy:
+
+        src: ./docker-compose
+
+        dest: /etc/bash_completion.d/
+
+        mode: 0644
+
+    - yum:
+
+        name: bash-completion

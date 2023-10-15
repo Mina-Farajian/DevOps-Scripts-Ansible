@@ -1,0 +1,15 @@
+---
+- name: Setup and Config OL7U8 v1
+  hosts: all
+  become: True
+  tasks:
+
+    - name: Enable and Start ZabbixAgent Service
+
+      systemd:
+
+        name: zabbix-agent2
+
+        enabled: yes
+
+        state: restarted

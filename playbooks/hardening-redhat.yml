@@ -1,0 +1,42 @@
+---
+- name: Red Hat VM Hardening
+  hosts: your_vm_group
+  become: yes
+  tasks:
+    - name: Update package cache and upgrade packages
+      yum:
+        name: "*"
+        state: latest
+      register: update_result
+      when: ansible_os_family == "RedHat"
+
+    - name: Set user password policy
+      pam_passwdqc:
+        min: 14
+        max: 30
+        min_of_class: 3
+        min_repeat: 3
+        min_dist: 3
+        max_sequence: 0
+        max_same: 0
+
+    - name: Disable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+      notify: Reload SSH
+
+    - name: Set SSH protocol to 2
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^Protocol'
+        line: 'Protocol 2'
+      notify: Reload SSH
+
+  handlers:
+    - name: Reload SSH
+      service:
+        name: sshd
+        state: reloaded
+
